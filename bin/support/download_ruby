@@ -38,30 +38,10 @@ ruby_url() {
   fi
 }
 
-# Pull ruby version out of buildpack.toml to be used with bootstrapping
-regex=".*ruby_version = [\'\"]([0-9]+\.[0-9]+\.[0-9]+)[\'\"].*"
-if [[ $(cat "$BIN_DIR/../buildpack.toml") =~ $regex ]]
-  then
-    heroku_buildpack_ruby_url=$(ruby_url "$STACK" "${BASH_REMATCH[1]}")
-  else
-    heroku_buildpack_ruby_url=""
-    echo "Could not detect ruby version to bootstrap"
-    exit 1
-fi
 
+# Install legacy ruby
 mkdir -p "$RUBY_BOOTSTRAP_DIR"
 
-curl_retry_on_18 --fail --retry 3 --retry-connrefused --connect-timeout "${CURL_CONNECT_TIMEOUT:-3}" --silent --location -o "$RUBY_BOOTSTRAP_DIR/ruby.tgz" "$heroku_buildpack_ruby_url" || {
-cat<<EOF
-  Failed to download a Ruby executable for bootstrapping!
+rbenv install 2.7.6
 
-  This is most likely a temporary internal error. If the problem
-  persists, make sure that you are not running a custom or forked
-  version of the Heroku Ruby buildpack which may need updating.
-
-  url: $heroku_buildpack_ruby_url
-EOF
-  exit 1
-}
-
-tar xzf "$RUBY_BOOTSTRAP_DIR/ruby.tgz" -C "$RUBY_BOOTSTRAP_DIR"
+ln ~/.rbenv/versions/2.7.6 "$RUBY_BOOTSTRAP_DIR"
